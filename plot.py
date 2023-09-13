@@ -157,6 +157,7 @@ if __name__ == "__main__":
     linestyles = create_linestyles(sorted(unique_algorithms))
     runs = compute_metrics(dataset.get_groundtruth(k=args.count),
                            results, args.x_axis, args.y_axis, args.recompute)
+    print(runs)
     if not runs:
         raise Exception('Nothing to plot')
 

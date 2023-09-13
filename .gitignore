@@ -13,3 +13,9 @@ results/*
 venv
 
 .idea
+neurips23/filter/wm_filter/faiss
+
+neurips23/filter/wm_filter/_bow_id_selector.so
+neurips23/filter/wm_filter/bow_id_selector.py
+neurips23/filter/wm_filter/bow_id_selector_wrap.cxx
+

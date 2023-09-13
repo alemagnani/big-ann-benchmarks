@@ -89,6 +89,7 @@ class FAISS(BaseFilterANN):
         self.indexkey = index_params.get("indexkey", "IVF32768,SQ8")
         self.binarysig = index_params.get("binarysig", True)
         self.binarysig_proba1 = index_params.get("binarysig_proba1", 0.1)
+        self.train_size = index_params.get('train_size', 2000000)
         self.metadata_threshold = 1e-3
         self.nt = index_params.get("threads", 1)
     
@@ -104,20 +105,29 @@ class FAISS(BaseFilterANN):
         else:
             self.binsig = None
 
-        if ds.search_type() == "knn_filtered":
-            self.meta_b = ds.get_dataset_metadata()
-            self.meta_b.sort_indices()
+
 
         index = faiss.index_factory(ds.d, self.indexkey)
         xb = ds.get_dataset()
         print("train")
-        index.train(xb)
+        print('train_size', self.train_size)
+        if self.train_size is not None:
+            x_train = xb[:self.train_size]
+        else:
+            x_train = xb
+        index.train(x_train)
         print("populate")
         if self.binsig is None:
-            index.add(xb)
+            bs = 1024
+            for i0 in range(0, ds.nb, bs):
+                index.add(xb[i0: i0 + bs])
+
         else:
             ids = np.arange(ds.nb) | self.binsig.db_sig
-            index.add_with_ids(xb, ids)
+            print('starting index with ids of type', ids.dtype, ids.shape, xb.shape)
+            bs = 1024
+            for i0 in range(0, ds.nb, bs):
+                index.add_with_ids(xb[i0: i0 + bs], ids[i0:i0 + bs])
 
         self.index = index
         self.nb = ds.nb
@@ -126,6 +136,14 @@ class FAISS(BaseFilterANN):
         self.ps.initialize(self.index)
         print("store", self.index_name(dataset))
         faiss.write_index(index, self.index_name(dataset))
+
+        if ds.search_type() == "knn_filtered":
+            self.words_per_doc = ds.get_dataset_metadata()
+            self.words_per_doc.sort_indices()
+            self.docs_per_word = self.words_per_doc.T.tocsr()
+            self.docs_per_word.sort_indices()
+            self.ndoc_per_word = self.docs_per_word.indptr[1:] - self.docs_per_word.indptr[:-1]
+            self.freq_per_word = self.ndoc_per_word / self.nb
 
     
     def index_name(self, name):
@@ -170,12 +188,18 @@ class FAISS(BaseFilterANN):
         else:
             self.binsig = None
 
-        if ds.search_type() == "knn_filtered":
-            self.meta_b = ds.get_dataset_metadata()
-            self.meta_b.sort_indices()
-
         self.nb = ds.nb
         self.xb = ds.get_dataset()
+
+        if ds.search_type() == "knn_filtered":
+            self.words_per_doc = ds.get_dataset_metadata()
+            self.words_per_doc.sort_indices()
+            self.docs_per_word = self.words_per_doc.T.tocsr()
+            self.docs_per_word.sort_indices()
+            self.ndoc_per_word = self.docs_per_word.indptr[1:] - self.docs_per_word.indptr[:-1]
+            self.freq_per_word = self.ndoc_per_word / self.nb
+
+
 
         return True        
 
@@ -204,11 +228,11 @@ class FAISS(BaseFilterANN):
         print('running filtered query')
         nq = X.shape[0]
         self.I = -np.ones((nq, k), dtype='int32')
-        meta_b = self.meta_b
+
         meta_q = filter
-        docs_per_word = meta_b.T.tocsr()
-        ndoc_per_word = docs_per_word.indptr[1:] - docs_per_word.indptr[:-1]
-        freq_per_word = ndoc_per_word / self.nb
+        docs_per_word = self.docs_per_word
+        ndoc_per_word = self.ndoc_per_word
+        freq_per_word = self.freq_per_word
         
         def process_one_row(q):
             faiss.omp_set_num_threads(1)
@@ -235,7 +259,7 @@ class FAISS(BaseFilterANN):
                 self.I[q, :] = docs[Ii.ravel()]
             else:
                 # IVF first, filtered search
-                sel = make_bow_id_selector(meta_b, self.binsig.id_mask if self.binsig else 0)
+                sel = make_bow_id_selector(self.words_per_doc, self.binsig.id_mask if self.binsig else 0)
                 if self.binsig is None:
                     sel.set_query_words(int(w1), int(w2))
                 else:

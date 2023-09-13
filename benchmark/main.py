@@ -197,7 +197,7 @@ def main():
         definitions = get_all_definitions(
             neurips23.common.track_path(args.neurips23track), 
             dimension, args.dataset, distance, args.count)
-
+    print('deifnitions', definitions)
     # Filter out, from the loaded definitions, all those query argument groups
     # that correspond to experiments that have already been run. (This might
     # mean removing a definition altogether, so we can't just use a list

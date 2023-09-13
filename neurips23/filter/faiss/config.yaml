@@ -35,7 +35,7 @@ yfcc-10M-unfiltered:
       run-groups:
         base:
           args: |
-            [{"indexkey": "IVF16384,SQ8", "binarysig": true, "threads": 16}]
+            [{"indexkey": "IVF16384,SQ8", "binarysig": true, "threads": 8}]
           query-args: |
             [{"nprobe": 1}, {"nprobe": 4}, {"nprobe": 16}, {"nprobe": 64}]
 yfcc-10M:
@@ -49,7 +49,7 @@ yfcc-10M:
           args: |
             [{"indexkey": "IVF16384,SQ8", 
               "binarysig": true, 
-              "threads": 16
+              "threads": 8
             }]
           query-args: |
             [{"nprobe": 1, "mt_threshold":0.0003}, 
@@ -71,4 +71,3 @@ yfcc-10M:
              {"nprobe": 64, "mt_threshold":0.01}, 
              {"nprobe": 96, "mt_threshold":0.01}
             ]
-
