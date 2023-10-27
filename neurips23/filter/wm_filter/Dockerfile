@@ -22,10 +22,8 @@ RUN cd /build/CMake-3.27.1 &&   ./bootstrap && make   && make install
 
 
 # we get the modified Faiss code
-RUN cd /
 RUN cd / &&  git clone https://github.com/alemagnani/faiss.git && cd /faiss && git pull && git checkout wm_filter
 
-RUN apt install -y cmake
 RUN cd /faiss && rm -rf ./build
 RUN cd /faiss/; cmake -B build /faiss/  -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DFAISS_OPT_LEVEL=avx2  -DBLA_VENDOR=Intel10_64_dyn -DBUILD_TESTING=ON  -DPython_EXECUTABLE=/usr/bin/python3 -DMKL_LIBRARIES=/usr/lib/x86_64-linux-gnu/libmkl_rt.so
 RUN cd /faiss/; make -C build -j faiss faiss_avx2 swigfaiss  swigfaiss_avx2
