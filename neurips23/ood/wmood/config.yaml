@@ -1,0 +1,30 @@
+random-xs:
+    wmood:
+      docker-tag: neurips23-ood-wmood
+      module: neurips23.ood.wmood.wmood
+      constructor: WMood
+      base-args: [ "@metric" ]
+      run-groups:
+        base:
+          args: |
+            [{"indexkey": "IVF1024,SQ8"}]
+          query-args: |
+            [{"nprobe":8},
+             {"nprobe":16},
+             {"nprobe":32},
+             {"nprobe":64}]
+text2image-10M:
+    wmood:
+      docker-tag: neurips23-ood-wmood
+      module: neurips23.ood.wmood.wmood
+      constructor: WMood
+      base-args: ["@metric"]
+      run-groups:
+        base:
+          args: |
+            [{"indexkey": "IVF1024,SQ8"}]
+          query-args: |
+            [{"Ls":30, "T":8},
+             {"Ls":50, "T":8},
+             {"Ls":70, "T":8},
+             {"Ls":100, "T":8}]
